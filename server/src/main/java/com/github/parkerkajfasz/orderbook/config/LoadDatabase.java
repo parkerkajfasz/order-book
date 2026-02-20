@@ -3,6 +3,7 @@ package com.github.parkerkajfasz.orderbook.config;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.OrderType;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Side;
+import com.github.parkerkajfasz.orderbook.feature.order.domain.TimeInForce;
 import com.github.parkerkajfasz.orderbook.feature.order.repository.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,7 @@ public class LoadDatabase {
     @Bean
     CommandLineRunner initDatabase(OrderRepository orderRepository) {
         return args -> {
-            log.info("Preloading " + orderRepository.save(new Order(OrderType.GOOD_TILL_CANCEL, Side.BUY, 100, 10, Instant.now())));
+            log.info("Preloading " + orderRepository.save(new Order(OrderType.LIMIT, TimeInForce.GOOD_TILL_CANCEL, Side.BUY, 100, 10, Instant.now())));
         };
     }
 }

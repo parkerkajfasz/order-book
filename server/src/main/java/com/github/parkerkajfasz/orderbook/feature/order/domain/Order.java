@@ -11,6 +11,7 @@ public class Order {
     @GeneratedValue
     private Long id;
     private OrderType orderType;
+    private TimeInForce timeInForce;
     private Side side;
     private int price;
     private int volume;
@@ -18,8 +19,9 @@ public class Order {
 
     protected Order() {};
 
-    public Order(OrderType orderType, Side side, int price, int volume, Instant timestamp) {
+    public Order(OrderType orderType, TimeInForce timeInForce, Side side, int price, int volume, Instant timestamp) {
         this.orderType = orderType;
+        this.timeInForce = timeInForce;
         this.side = side;
         this.price = price;
         this.volume = volume;
@@ -33,6 +35,8 @@ public class Order {
     public OrderType getOrderType() {
         return orderType;
     }
+
+    public TimeInForce getTimeInForce() { return timeInForce; }
 
     public Side getSide() {
         return side;
