@@ -1,10 +1,11 @@
 package com.github.parkerkajfasz.orderbook.feature.book.domain;
 
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
+import com.github.parkerkajfasz.orderbook.feature.order.domain.Side;
 import jakarta.persistence.*;
+import org.antlr.v4.runtime.tree.Tree;
 
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 @Entity
 public class OrderBook {
@@ -13,26 +14,32 @@ public class OrderBook {
     @GeneratedValue
     private Long id;
     @Transient
-    private Map<Integer, Queue<Order>> bids; // Descending queue of bids (Top being highest price buyer is willing to pay)
+    private TreeMap<Integer, Queue<Order>> bids;
     @Transient
-    private Map<Integer, Queue<Order>> asks; // Ascending queue of asks (Top is the lowest someone is willing to sell)
+    private TreeMap<Integer, Queue<Order>> asks;
 
-    protected OrderBook() {};
-
-    public OrderBook(Map<Integer, Queue<Order>> bids, Map<Integer, Queue<Order>> asks) {
-        this.bids = bids;
-        this.asks = asks;
+    public OrderBook() {
+        this.bids = new TreeMap<>(Collections.reverseOrder()); // Descending queue of bids (Top is the highest price someone is willing to buy)
+        this.asks = new TreeMap<>();                           // Ascending queue of asks (Top is the lowest price someone is willing to sell)
     }
 
     public Long getId() {
         return id;
     }
 
-    public Map<Integer, Queue<Order>> getBids() {
+    public TreeMap<Integer, Queue<Order>> getBids() {
         return bids;
     }
 
-    public Map<Integer, Queue<Order>> getAsks() {
+    public TreeMap<Integer, Queue<Order>> getAsks() {
         return asks;
+    }
+
+    public void addOrder(Order order) {
+        if (order.getSide() == Side.BUY) {
+            bids.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
+        } else {
+            asks.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
+        }
     }
 }

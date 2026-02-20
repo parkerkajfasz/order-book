@@ -18,10 +18,10 @@ public class LoadDatabase {
 
     private static final Logger log = LoggerFactory.getLogger(LoadDatabase.class);
 
-    @Bean
-    CommandLineRunner initDatabase(OrderRepository orderRepository) {
-        return args -> {
-            log.info("Preloading " + orderRepository.save(new Order(OrderType.LIMIT, TimeInForce.GOOD_TILL_CANCEL, Side.BUY, 100, 10, Instant.now())));
-        };
-    }
+//    @Bean
+//    CommandLineRunner initDatabase(OrderRepository orderRepository) {
+//        return args -> {
+//            log.info("Preloading " + orderRepository.save(new Order(OrderType.LIMIT, TimeInForce.GOOD_TILL_CANCEL, Side.BUY, 100, 10, Instant.now())));
+//        };
+//    }
 }
