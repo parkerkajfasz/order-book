@@ -4,11 +4,8 @@ import jakarta.persistence.*;
 
 import java.time.Instant;
 
-@Entity
 public class Order {
 
-    @Id
-    @GeneratedValue
     private Long id;
     private OrderType orderType;
     private TimeInForce timeInForce;
