@@ -3,12 +3,7 @@ package com.github.parkerkajfasz.orderbook.feature.book.service;
 import com.github.parkerkajfasz.orderbook.feature.book.domain.OrderBook;
 import com.github.parkerkajfasz.orderbook.feature.book.dto.BestBidOfferDTO;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
-import com.github.parkerkajfasz.orderbook.feature.order.domain.OrderType;
-import com.github.parkerkajfasz.orderbook.feature.order.domain.Side;
-import com.github.parkerkajfasz.orderbook.feature.order.domain.TimeInForce;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
 
 @Service
 public class OrderBookService {
@@ -17,6 +12,11 @@ public class OrderBookService {
 
     public OrderBookService(OrderBook orderBook) {
         this.orderBook = orderBook;
+    }
+
+    public Order addToOrderBook(Order order) {
+        orderBook.addOrder(order);
+        return order;
     }
 
     public BestBidOfferDTO getBestBidOfferData() {

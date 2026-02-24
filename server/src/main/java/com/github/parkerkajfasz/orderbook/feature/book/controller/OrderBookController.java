@@ -2,9 +2,8 @@ package com.github.parkerkajfasz.orderbook.feature.book.controller;
 
 import com.github.parkerkajfasz.orderbook.feature.book.dto.BestBidOfferDTO;
 import com.github.parkerkajfasz.orderbook.feature.book.service.OrderBookService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/orderbook")
@@ -14,6 +13,12 @@ public class OrderBookController {
 
     public OrderBookController(OrderBookService orderBookService) {
         this.orderBookService = orderBookService;
+    }
+
+    @PostMapping("/orders")
+    public Order createOrder(@RequestBody Order newOrder) {
+        Order createdOrder = orderBookService.addToOrderBook(newOrder);
+        return createdOrder;
     }
 
     @GetMapping("/l1")
