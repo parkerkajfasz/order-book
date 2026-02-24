@@ -1,8 +1,10 @@
 package com.github.parkerkajfasz.orderbook.feature.book.controller;
 
-import com.github.parkerkajfasz.orderbook.feature.book.dto.BestBidOfferDTO;
+import com.github.parkerkajfasz.orderbook.feature.book.dto.BestBidOfferResponseDTO;
 import com.github.parkerkajfasz.orderbook.feature.book.service.OrderBookService;
-import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
+import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderRequestDTO;
+import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderResponseDTO;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,13 +18,13 @@ public class OrderBookController {
     }
 
     @PostMapping("/orders")
-    public Order createOrder(@RequestBody Order newOrder) {
-        Order createdOrder = orderBookService.addToOrderBook(newOrder);
+    public OrderResponseDTO createOrder(@Valid @RequestBody OrderRequestDTO orderRequest) {
+        OrderResponseDTO createdOrder = orderBookService.addToOrderBook(orderRequest);
         return createdOrder;
     }
 
     @GetMapping("/l1")
-    public BestBidOfferDTO getLevelOneData() {
+    public BestBidOfferResponseDTO getLevelOneData() {
         return orderBookService.getBestBidOfferData();
     }
 }

@@ -1,8 +1,11 @@
 package com.github.parkerkajfasz.orderbook.feature.order.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Order {
 
@@ -14,9 +17,8 @@ public class Order {
     private int volume;
     private Instant timestamp;
 
-    protected Order() {};
-
-    public Order(OrderType orderType, TimeInForce timeInForce, Side side, int price, int volume, Instant timestamp) {
+    public Order(Long id, OrderType orderType, TimeInForce timeInForce, Side side, int price, int volume, Instant timestamp) {
+        this.id = id;
         this.orderType = orderType;
         this.timeInForce = timeInForce;
         this.side = side;
@@ -25,9 +27,7 @@ public class Order {
         this.timestamp = timestamp;
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
     public OrderType getOrderType() {
         return orderType;
