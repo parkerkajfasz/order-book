@@ -36,7 +36,7 @@ public class OrderBookService {
     }
 
     public BestBidOfferResponseDTO getBestBidOfferData() {
-        return new BestBidOfferResponseDTO(orderBook.getBestBidPrice(), orderBook.getBestBidVolume(), orderBook.getBestAskPrice(), orderBook.getBestAskVolume());
+        return new BestBidOfferResponseDTO(orderBook.getBestBid().getPrice(), orderBook.getBestBid().getVolume(), orderBook.getBestAsk().getPrice(), orderBook.getBestAsk().getVolume());
     }
 //    public void getMarketByPrice() {}
 //

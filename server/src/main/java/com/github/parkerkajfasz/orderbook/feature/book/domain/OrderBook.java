@@ -2,11 +2,8 @@ package com.github.parkerkajfasz.orderbook.feature.book.domain;
 
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Side;
-import jakarta.persistence.*;
-import org.antlr.v4.runtime.tree.Tree;
 import org.springframework.stereotype.Component;
 
-import javax.management.RuntimeErrorException;
 import java.util.*;
 
 @Component
@@ -28,24 +25,14 @@ public class OrderBook {
         return asks;
     }
 
-    public int getBestBidPrice() {
+    public Order getBestBid() {
         if (bids.isEmpty()) throw new IllegalStateException("No bids have been added to order book");
-        return Objects.requireNonNull(bids.firstEntry().getValue().peek()).getPrice();
+        return Objects.requireNonNull(bids.firstEntry().getValue().peek());
     }
 
-    public int getBestBidVolume() {
-        if (bids.isEmpty()) throw new IllegalStateException("No bids have been added to order book");
-        return Objects.requireNonNull(bids.firstEntry().getValue().peek()).getVolume();
-    }
-
-    public int getBestAskPrice() {
+    public Order getBestAsk() {
         if (bids.isEmpty()) throw new IllegalStateException("No asks have been added to order book");
-        return Objects.requireNonNull(asks.firstEntry().getValue().peek()).getPrice();
-    }
-
-    public int getBestAskVolume() {
-        if (bids.isEmpty()) throw new IllegalStateException("No asks have been added to order book");
-        return Objects.requireNonNull(bids.firstEntry().getValue().peek()).getVolume();
+        return Objects.requireNonNull(asks.firstEntry().getValue().peek());
     }
 
     public void addOrder(Order order) {
@@ -53,6 +40,22 @@ public class OrderBook {
             bids.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
         } else {
             asks.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
+        }
+    }
+
+    public void removeTopBidPriceLevel() {
+        Map.Entry<Integer, Queue<Order>> topLevelBids = bids.firstEntry();
+
+        if (bids.firstEntry().getValue().isEmpty()) {
+            bids.remove(topLevelBids.getKey(), topLevelBids.getValue());
+        }
+    }
+
+    public void removeTopAskPriceLevel() {
+        Map.Entry<Integer, Queue<Order>> topLevelAsks = asks.firstEntry();
+
+        if (topLevelAsks.getValue().isEmpty()) {
+            asks.remove(topLevelAsks.getKey(), topLevelAsks.getValue());
         }
     }
 }

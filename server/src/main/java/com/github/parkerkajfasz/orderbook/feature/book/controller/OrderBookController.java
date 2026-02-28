@@ -7,6 +7,9 @@ import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderResponseDTO;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 @RequestMapping("/orderbook")
 public class OrderBookController {
@@ -21,6 +24,17 @@ public class OrderBookController {
     public OrderResponseDTO createOrder(@Valid @RequestBody OrderRequestDTO orderRequest) {
         OrderResponseDTO createdOrder = orderBookService.addToOrderBook(orderRequest);
         return createdOrder;
+    }
+
+    @PostMapping("/orders/batch")
+    public List<OrderResponseDTO> createOrders(@Valid @RequestBody List<OrderRequestDTO> orderRequests) {
+
+        List<OrderResponseDTO> createdOrders = new ArrayList<>();
+        for (OrderRequestDTO orderRequest : orderRequests) {
+            OrderResponseDTO createdOrder = orderBookService.addToOrderBook(orderRequest);
+            createdOrders.add(createdOrder);
+        }
+        return createdOrders;
     }
 
     @GetMapping("/l1")
