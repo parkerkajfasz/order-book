@@ -12,10 +12,10 @@ import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OrderBookServiceTest {
+class OrderBookServiceTest {
 
     @Test
-    public void addToOrderBook_addsBuyOrderAndReturnsResponse() {
+    void addToOrderBook_addsBuyOrderAndReturnsResponse() {
         OrderBook orderBook = new OrderBook();
         OrderBookService orderBookService = new OrderBookService(orderBook);
 
@@ -36,7 +36,7 @@ public class OrderBookServiceTest {
     }
 
     @Test
-    public void addToOrderBook_addsSellOrderAndReturnsResponse() {
+    void addToOrderBook_addsSellOrderAndReturnsResponse() {
         OrderBook orderBook = new OrderBook();
         OrderBookService orderBookService = new OrderBookService(orderBook);
 

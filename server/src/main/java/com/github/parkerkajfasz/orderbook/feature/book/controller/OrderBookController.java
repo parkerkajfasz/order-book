@@ -1,6 +1,7 @@
 package com.github.parkerkajfasz.orderbook.feature.book.controller;
 
 import com.github.parkerkajfasz.orderbook.feature.book.dto.BestBidOfferResponseDTO;
+import com.github.parkerkajfasz.orderbook.feature.book.dto.MarketByPriceResponseDTO;
 import com.github.parkerkajfasz.orderbook.feature.book.service.OrderBookService;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderRequestDTO;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderResponseDTO;
@@ -41,4 +42,7 @@ public class OrderBookController {
     public BestBidOfferResponseDTO getLevelOneData() {
         return orderBookService.getBestBidOfferData();
     }
+
+//    @GetMapping("/l2")
+//    public MarketByPriceResponseDTO getLevelTwoData() { return orderBookService.getMarketByPriceData(); }
 }
