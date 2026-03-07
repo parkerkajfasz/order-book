@@ -2,14 +2,13 @@ package com.github.parkerkajfasz.orderbook.feature.book.service;
 
 import com.github.parkerkajfasz.orderbook.feature.book.domain.OrderBook;
 import com.github.parkerkajfasz.orderbook.feature.book.dto.BestBidOfferResponseDTO;
-import com.github.parkerkajfasz.orderbook.feature.book.dto.MarketByPriceResponseDTO;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderRequestDTO;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderResponseDTO;
-import org.springframework.data.querydsl.QuerydslUtils;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -17,6 +16,7 @@ public class OrderBookService {
 
     private final OrderBook orderBook;
     private static final AtomicLong ID_GENERATOR = new AtomicLong(1);
+    private static final Logger log = LoggerFactory.getLogger(OrderBookService.class);
 
     public OrderBookService(OrderBook orderBook) {
         this.orderBook = orderBook;
@@ -34,7 +34,7 @@ public class OrderBookService {
                 orderRequest.timestamp()
         );
         orderBook.addOrder(order);
-
+        log.info("Order {} added to order book", order.getId());
         return new OrderResponseDTO(order.getId(), order.getOrderType(), order.getTimeInForce(), order.getSide(), order.getPrice(), order.getVolume(), order.getTimestamp());
     }
 
