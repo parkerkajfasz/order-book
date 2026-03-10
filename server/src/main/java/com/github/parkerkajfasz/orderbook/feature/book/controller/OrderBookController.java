@@ -23,7 +23,7 @@ public class OrderBookController {
 
     @PostMapping("/orders")
     public OrderResponseDTO createOrder(@Valid @RequestBody OrderRequestDTO orderRequest) {
-        OrderResponseDTO createdOrder = orderBookService.addToOrderBook(orderRequest);
+        OrderResponseDTO createdOrder = orderBookService.addToOrderBook(orderRequest); // should be renamed to something more fitting
         return createdOrder;
     }
 

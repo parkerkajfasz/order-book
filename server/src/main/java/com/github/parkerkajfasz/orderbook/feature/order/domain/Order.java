@@ -11,7 +11,7 @@ public class Order {
     private int price;
     private int volume;
     private Instant timestamp;
-    private int remVolume;
+    private int volumeRemaining;
 
     public Order(Long id, OrderType orderType, TimeInForce timeInForce, Side side, int price, int volume, Instant timestamp) {
         this.id = id;
@@ -21,7 +21,7 @@ public class Order {
         this.price = price;
         this.volume = volume;
         this.timestamp = timestamp;
-        this.remVolume = volume;
+        this.volumeRemaining = volume;
     }
 
     public Long getId() { return id; }
@@ -48,9 +48,9 @@ public class Order {
         return timestamp;
     }
 
-    public int getRemVolume() { return remVolume; }
+    public int getVolumeRemaining() { return volumeRemaining; }
 
-    public void fillRemVolume(int subtractedVolume) {
-        this.remVolume -= subtractedVolume;
+    public void subtractVolume(int subtractedVolume) {
+        this.volumeRemaining -= subtractedVolume;
     };
 }

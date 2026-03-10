@@ -2,6 +2,7 @@ package com.github.parkerkajfasz.orderbook.feature.book.domain;
 
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Side;
+import org.antlr.v4.runtime.tree.Tree;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -26,13 +27,17 @@ public class OrderBook {
     }
 
     public Order getBestBid() {
-        if (bids.isEmpty()) throw new IllegalStateException("No bids have been added to order book");
-        return Objects.requireNonNull(bids.firstEntry().getValue().peek());
+        if (bids.isEmpty()) {
+            return null;
+        }
+        return bids.firstEntry().getValue().peek();
     }
 
     public Order getBestAsk() {
-        if (bids.isEmpty()) throw new IllegalStateException("No asks have been added to order book");
-        return Objects.requireNonNull(asks.firstEntry().getValue().peek());
+        if (asks.isEmpty()) {
+            return null;
+        }
+        return asks.firstEntry().getValue().peek();
     }
 
     public void addOrder(Order order) {
@@ -43,19 +48,16 @@ public class OrderBook {
         }
     }
 
-    public void removeTopBidPriceLevel() {
-        Map.Entry<Integer, Queue<Order>> topLevelBids = bids.firstEntry();
+    public void removeOrder(Order order) {
+        TreeMap<Integer, Queue<Order>> bookSide = order.getSide() == Side.BUY ? bids : asks;
 
-        if (bids.firstEntry().getValue().isEmpty()) {
-            bids.remove(topLevelBids.getKey(), topLevelBids.getValue());
-        }
-    }
+        Queue<Order> orders = bookSide.get(order.getPrice());
+        if (orders == null) return; // don't remove order if the level doesn't exist
 
-    public void removeTopAskPriceLevel() {
-        Map.Entry<Integer, Queue<Order>> topLevelAsks = asks.firstEntry();
+        orders.remove(order);
 
-        if (topLevelAsks.getValue().isEmpty()) {
-            asks.remove(topLevelAsks.getKey(), topLevelAsks.getValue());
+        if (orders.isEmpty()) { // if the level itself is empty, remove it from the book side
+            bookSide.remove(order.getPrice());
         }
     }
 }
