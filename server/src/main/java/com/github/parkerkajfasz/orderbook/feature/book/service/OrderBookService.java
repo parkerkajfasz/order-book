@@ -2,25 +2,31 @@ package com.github.parkerkajfasz.orderbook.feature.book.service;
 
 import com.github.parkerkajfasz.orderbook.feature.book.domain.OrderBook;
 import com.github.parkerkajfasz.orderbook.feature.book.dto.BestBidOfferResponseDTO;
+import com.github.parkerkajfasz.orderbook.feature.book.dto.Trade;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Side;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderRequestDTO;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderResponseDTO;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalTime;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class OrderBookService {
 
     private final OrderBook orderBook;
+    private final SimpMessagingTemplate messagingTemplate;
     private static final AtomicLong ID_GENERATOR = new AtomicLong(1);
     private static final Logger log = LoggerFactory.getLogger(OrderBookService.class);
 
-    public OrderBookService(OrderBook orderBook) {
+    public OrderBookService(OrderBook orderBook, SimpMessagingTemplate messagingTemplate) {
         this.orderBook = orderBook;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public OrderResponseDTO addToOrderBook(OrderRequestDTO orderRequest) {
@@ -34,10 +40,7 @@ public class OrderBookService {
                 orderRequest.timestamp()
         );
 
-        orderBook.addOrder(order);
-        log.info("Order {} added to order book", order.getId());
-        scanOrderBook(order);
-
+        processOrder(order);
         return new OrderResponseDTO(order.getId(), order.getOrderType(), order.getTimeInForce(), order.getSide(), order.getPrice(), order.getVolume(), order.getTimestamp());
     }
 
@@ -46,9 +49,9 @@ public class OrderBookService {
     }
 
     /**
-     * Matching Engine related code. Will run each time new order comes through controller
+     * Matching Engine related code
      */
-    public void scanOrderBook(Order incomingOrder) {
+    public void processOrder(Order incomingOrder) {
 
 
         while (incomingOrder.getVolumeRemaining() > 0) {
@@ -94,6 +97,10 @@ public class OrderBookService {
 
         incomingOrder.subtractVolume(volumeTraded);
         restingOrder.subtractVolume(volumeTraded);
-        log.info("TRADE executed: {} SYMBL @ {} | maker={} | taker={} | makerId={} | takerId={}", volumeTraded, restingOrder.getPrice(), incomingOrder.getSide(), restingOrder.getSide(), incomingOrder.getId(), restingOrder.getId());
+
+        log.info("TRADE executed: {} @ {} | maker={} | taker={} | makerId={} | takerId={}", volumeTraded, restingOrder.getPrice(), incomingOrder.getSide(), restingOrder.getSide(), incomingOrder.getId(), restingOrder.getId());
+
+        Trade trade = new Trade(LocalTime.now(), volumeTraded, restingOrder.getPrice(), incomingOrder.getSide());
+        messagingTemplate.convertAndSend("/topic/trades", trade);
     }
 }

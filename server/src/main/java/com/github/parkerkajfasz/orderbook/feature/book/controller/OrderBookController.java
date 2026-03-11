@@ -2,10 +2,12 @@ package com.github.parkerkajfasz.orderbook.feature.book.controller;
 
 import com.github.parkerkajfasz.orderbook.feature.book.dto.BestBidOfferResponseDTO;
 import com.github.parkerkajfasz.orderbook.feature.book.dto.MarketByPriceResponseDTO;
+import com.github.parkerkajfasz.orderbook.feature.book.dto.Trade;
 import com.github.parkerkajfasz.orderbook.feature.book.service.OrderBookService;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderRequestDTO;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderResponseDTO;
 import jakarta.validation.Valid;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -28,20 +30,21 @@ public class OrderBookController {
     }
 
     @PostMapping("/orders/batch")
-    public List<OrderResponseDTO> createOrders(@Valid @RequestBody List<OrderRequestDTO> orderRequests) {
+    public List<OrderResponseDTO> createOrders(@Valid @RequestBody List<OrderRequestDTO> orderRequests) throws InterruptedException {
 
         List<OrderResponseDTO> createdOrders = new ArrayList<>();
         for (OrderRequestDTO orderRequest : orderRequests) {
             OrderResponseDTO createdOrder = orderBookService.addToOrderBook(orderRequest);
+            Thread.sleep(200);
             createdOrders.add(createdOrder);
         }
         return createdOrders;
     }
 
-    @GetMapping("/l1")
-    public BestBidOfferResponseDTO getLevelOneData() {
-        return orderBookService.getBestBidOfferData();
-    }
+//    @GetMapping("/l1")
+//    public BestBidOfferResponseDTO getLevelOneData() {
+//        return orderBookService.getBestBidOfferData();
+//    }
 
 //    @GetMapping("/l2")
 //    public MarketByPriceResponseDTO getLevelTwoData() { return orderBookService.getMarketByPriceData(); }
