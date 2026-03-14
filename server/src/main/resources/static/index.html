@@ -19,6 +19,7 @@
 </noscript>
 
 <div id="main-content" class="container">
+    <!-- WebSocket & Market Depth Menu -->
     <div class="row">
         <div class="col-md-6">
             <form class="form-inline">
@@ -37,6 +38,7 @@
             <button id="mbo-button" class="btn btn-default" type="button">L3 (MBO)</button>
         </div>
     </div>
+    <hr/>
 
     <div class="row"  style="margin-top: 20px;">
         <div class="col-md-6">
@@ -69,9 +71,9 @@
                         <table id="mbp-bids-table" class="table table-striped text-center">
                             <thead>
                             <tr>
-                                <th>Orders</th>
-                                <th>Quantity</th>
-                                <th>Buy</th>
+                                <th>Count</th>
+                                <th>Size</th>
+                                <th>Bid</th>
                             </tr>
                             </thead>
                             <tbody id="mbp-bids"></tbody>
@@ -81,9 +83,9 @@
                         <table id="mbp-asks-table" class="table table-striped text-center">
                             <thead>
                             <tr>
-                                <th>Sell</th>
-                                <th>Quantity</th>
-                                <th>Orders</th>
+                                <th>Ask</th>
+                                <th>Size</th>
+                                <th>Count</th>
                             </tr>
                             </thead>
                             <tbody id="mbp-asks"></tbody>
@@ -99,7 +101,7 @@
                             <thead>
                             <tr>
                                 <th>Timestamp</th>
-                                <th>Volume</th>
+                                <th>Size</th>
                                 <th>Price</th>
                                 <th>Side</th>
                             </tr>
@@ -113,7 +115,7 @@
                             <tr>
                                 <th>Side</th>
                                 <th>Price</th>
-                                <th>Volume</th>
+                                <th>Size</th>
                                 <th>Timestamp</th>
                             </tr>
                             </thead>

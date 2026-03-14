@@ -10,9 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/orderbook")
+@RequestMapping("/api/v1/orderbook")
 public class OrderBookController {
-
     private final OrderBookService orderBookService;
 
     public OrderBookController(OrderBookService orderBookService) {
@@ -20,13 +19,13 @@ public class OrderBookController {
     }
 
     @PostMapping("/orders")
-    public OrderResponseDTO createOrder(@Valid @RequestBody OrderRequestDTO orderRequest) {
+    public OrderResponseDTO submitOrder(@Valid @RequestBody OrderRequestDTO orderRequest) {
         OrderResponseDTO createdOrder = orderBookService.addToOrderBook(orderRequest); // should be renamed to something more fitting
         return createdOrder;
     }
 
     @PostMapping("/orders/batch")
-    public List<OrderResponseDTO> createOrders(@Valid @RequestBody List<OrderRequestDTO> orderRequests) throws InterruptedException {
+    public List<OrderResponseDTO> submitOrders(@Valid @RequestBody List<OrderRequestDTO> orderRequests) throws InterruptedException {
         List<OrderResponseDTO> createdOrders = new ArrayList<>();
 
         for (OrderRequestDTO orderRequest : orderRequests) {

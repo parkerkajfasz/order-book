@@ -2,14 +2,12 @@ package com.github.parkerkajfasz.orderbook.feature.book.domain;
 
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Side;
-import org.antlr.v4.runtime.tree.Tree;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 @Component
 public class OrderBook {
-
     private TreeMap<Integer, Queue<Order>> bids;
     private TreeMap<Integer, Queue<Order>> asks;
 
@@ -26,18 +24,18 @@ public class OrderBook {
         return asks;
     }
 
-    public Order getBestBid() {
+    public Optional<Order> getBestBid() {
         if (bids.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
-        return bids.firstEntry().getValue().peek();
+        return Optional.ofNullable(bids.firstEntry().getValue().peek());
     }
 
-    public Order getBestAsk() {
+    public Optional<Order> getBestAsk() {
         if (asks.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
-        return asks.firstEntry().getValue().peek();
+        return Optional.ofNullable(asks.firstEntry().getValue().peek());
     }
 
     public void addOrder(Order order) {

@@ -1,6 +1,6 @@
 package com.github.parkerkajfasz.orderbook.feature.order.domain;
 
-import java.time.Instant;
+import java.time.LocalTime;
 
 public class Order {
 
@@ -10,10 +10,10 @@ public class Order {
     private Side side;
     private int price;
     private int volume;
-    private Instant timestamp;
+    private LocalTime timestamp;
     private int volumeRemaining;
 
-    public Order(Long id, OrderType orderType, TimeInForce timeInForce, Side side, int price, int volume, Instant timestamp) {
+    public Order(Long id, OrderType orderType, TimeInForce timeInForce, Side side, int price, int volume, LocalTime timestamp) {
         this.id = id;
         this.orderType = orderType;
         this.timeInForce = timeInForce;
@@ -44,7 +44,7 @@ public class Order {
         return volume;
     }
 
-    public Instant getTimestamp() {
+    public LocalTime getTimestamp() {
         return timestamp;
     }
 

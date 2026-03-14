@@ -15,6 +15,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.time.LocalTime;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -31,11 +32,11 @@ class OrderBookControllerUnitTest {
     private MockMvc mockMvc;
 
     @Test
-    void createOrder_ValidOrderRequestAndReturnsResponse() throws Exception {
+    void submitOrder_ValidOrderRequestAndReturnsResponse() throws Exception {
 
-        when(orderBookService.addToOrderBook(any(OrderRequestDTO.class))).thenReturn(new OrderResponseDTO(1L, OrderType.LIMIT, TimeInForce.GOOD_TILL_CANCEL, Side.BUY, 55, 289, Instant.parse("2026-02-22T15:30:00Z")));
+        when(orderBookService.addToOrderBook(any(OrderRequestDTO.class))).thenReturn(new OrderResponseDTO(1L, OrderType.LIMIT, TimeInForce.GOOD_TILL_CANCEL, Side.BUY, 55, 289, LocalTime.parse("2026-02-22T15:30:00Z")));
 
-        String validRequest = "{\"orderType\":\"LIMIT\",\"timeInForce\":\"GOOD_TILL_CANCEL\",\"side\":\"SELL\",\"price\":55,\"volume\":289,\"timestamp\":\"2026-02-22T15:30:00Z\"}";
+        String validRequest = "{\"orderType\":\"LIMIT\",\"timeInForce\":\"GOOD_TILL_CANCEL\",\"side\":\"SELL\",\"price\":55,\"volume\":289,\"timestamp\":\"15:30:00\"}";
         mockMvc.perform(post("/orderbook/orders")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validRequest))
@@ -45,9 +46,9 @@ class OrderBookControllerUnitTest {
     }
 
     @Test
-    void createOrder_InvalidOrderRequestAndReturnsException() throws Exception {
+    void submitOrder_InvalidOrderRequestAndReturnsException() throws Exception {
 
-        String invalidRequest = "{\"orderType\":\"GOOD_TILL_CANCEL\",\"timeInForce\":\"LIMIT\",\"side\":\"BUY\",\"price\":55,\"volume\":289,\"timestamp\":\"2026-02-22T15:30:00Z\"}"; // OrderType and TimeInForce values are flipped, making it invalid
+        String invalidRequest = "{\"orderType\":\"GOOD_TILL_CANCEL\",\"timeInForce\":\"LIMIT\",\"side\":\"BUY\",\"price\":55,\"volume\":289,\"timestamp\":\"15:30:00\"}"; // OrderType and TimeInForce values are flipped, making it invalid
         mockMvc.perform(post("/orderbook/orders")
                        .contentType(MediaType.APPLICATION_JSON)
                        .content(invalidRequest))

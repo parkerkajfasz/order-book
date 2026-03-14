@@ -4,5 +4,5 @@ import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
 
 import java.util.List;
 
-public record MarketByOrderDTO(List<Order> bids, List<Order> asks) {
+public record MarketByOrderDTO(List<MarketByOrderEntryDTO> bids, List<MarketByOrderEntryDTO> asks) {
 }

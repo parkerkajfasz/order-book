@@ -3,7 +3,9 @@ package com.github.parkerkajfasz.orderbook.feature.book.service;
 import com.github.parkerkajfasz.orderbook.feature.book.domain.OrderBook;
 import com.github.parkerkajfasz.orderbook.feature.book.dto.*;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Order;
+import com.github.parkerkajfasz.orderbook.feature.order.domain.OrderType;
 import com.github.parkerkajfasz.orderbook.feature.order.domain.Side;
+import com.github.parkerkajfasz.orderbook.feature.order.domain.TimeInForce;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderRequestDTO;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderResponseDTO;
 import org.slf4j.LoggerFactory;
@@ -13,10 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -40,7 +39,7 @@ public class OrderBookService {
                 orderRequest.side(),
                 orderRequest.price(),
                 orderRequest.volume(),
-                orderRequest.timestamp()
+                LocalTime.now()
         );
 
         processOrder(order);
@@ -52,49 +51,93 @@ public class OrderBookService {
      */
     public void processOrder(Order incomingOrder) {
 
-        while (incomingOrder.getVolumeRemaining() > 0) {
+        if (incomingOrder.getOrderType() == OrderType.MARKET) {
+            processMarketOrder(incomingOrder);
+        } else {
+            processLimitOrder(incomingOrder);
+        }
 
-            Order restingOrder = getRestingOrder(incomingOrder);
-            if (restingOrder == null || !crossedBook(incomingOrder, restingOrder)) {
+        updateBBO(); // broadcast new L1 state
+        updateMBP(); // broadcast new L2 state
+        updateMBO(); // broadcast new L3 state
+    }
+
+    private void processMarketOrder(Order incomingOrder) {
+
+        while (incomingOrder.getVolumeRemaining() > 0) {
+            Optional<Order> restingOrderOption = getRestingOrder(incomingOrder);
+            if (restingOrderOption.isEmpty()) {
+                break;
+            }
+
+            Order restingOrder = restingOrderOption.get();
+            trade(incomingOrder, restingOrder);
+
+            if (restingOrder.getVolumeRemaining() == 0) {
+                orderBook.removeOrder(restingOrder);
+                log.info("ORDER {} removed from order book", restingOrder.getId());
+            }
+        }
+
+        if (incomingOrder.getVolumeRemaining() > 0) {
+            log.info("ORDER {} canceled with {} unfilled", incomingOrder.getId(), incomingOrder.getVolumeRemaining());
+        }
+    }
+
+    private void processLimitOrder(Order incomingOrder) {
+
+        while (incomingOrder.getVolumeRemaining() > 0) {
+            Optional<Order> restingOrderOption = getRestingOrder(incomingOrder);
+            if (restingOrderOption.isEmpty()) {
+                break;
+            }
+
+            Order restingOrder = restingOrderOption.get();
+            if (!crossBook(incomingOrder, restingOrder)) {
                 break;
             }
 
             trade(incomingOrder, restingOrder);
+
             if (restingOrder.getVolumeRemaining() == 0) {
                 orderBook.removeOrder(restingOrder);
-                log.info("Order {} removed from order book", incomingOrder.getId());
+                log.info("ORDER {} removed from order book", restingOrder.getId());
             }
         }
 
-        if (incomingOrder.getVolumeRemaining() > 0) { // if incomingOrder volume has volume remaining, but can't cross book, then add to book.
-            orderBook.addOrder(incomingOrder);
-            log.info("Order {} added to order book", incomingOrder.getId());
-        }
+        /**
+         * GTC + incomingOrder quantityRemaining == 0 : Do nothing
+         * GTC + incomingOrder quantityRemaining >  0 : Add incomingOrder to order book
+         * IOC + incomingOrder quantityRemaining == 0 : Do nothing
+         * IOC + incomingOrder quantityRemaining >  0 : Do not add incomingOrder to order book
+         */
 
-        updateBBO(); // broadcast new best bid offer state
-        updateMBP(); // broadcast new market by price state
-        updateMBO(); // broadcast new market by offer state
+        if (incomingOrder.getVolumeRemaining() > 0) {
+            if (incomingOrder.getTimeInForce() == TimeInForce.GOOD_TILL_CANCEL) {
+                orderBook.addOrder(incomingOrder);
+                log.info("ORDER {} added to order book", incomingOrder.getId());
+            } else {
+                if (incomingOrder.getVolumeRemaining() < incomingOrder.getVolume()) {
+                    log.info("ORDER {} canceled with {} unfilled", incomingOrder.getId(), incomingOrder.getVolumeRemaining());
+                }
+            }
+        }
+//        if (incomingOrder.getVolumeRemaining() > 0) { // if incomingOrder volume has volume remaining, but can't cross book, then add to book.
+//            orderBook.addOrder(incomingOrder);
+//            log.info("ORDER {} added to order book", incomingOrder.getId());
+//        }
     }
 
-    private Order getRestingOrder(Order incomingOrder) {
-        Order restingOrder;
-
-        if (incomingOrder.getSide() == Side.BUY) {
-            restingOrder = orderBook.getBestAsk();
-        } else {
-            restingOrder = orderBook.getBestBid();
-        }
-        return restingOrder;
+    private Optional<Order> getRestingOrder(Order incomingOrder) {
+        return incomingOrder.getSide() == Side.BUY
+                ? orderBook.getBestAsk()
+                : orderBook.getBestBid();
     }
 
-    private boolean crossedBook(Order incomingOrder, Order restingOrder) {
-        if (incomingOrder == null || restingOrder == null || incomingOrder.getVolumeRemaining() == 0 || restingOrder.getVolumeRemaining() == 0) return false;
-
-        if (incomingOrder.getSide() == Side.BUY) {
-            return incomingOrder.getPrice() >= restingOrder.getPrice(); // BUY crosses if its price >= price of best ASK
-        } else {
-            return incomingOrder.getPrice() <= restingOrder.getPrice(); // SELL crosses if its price <= price of best BID
-        }
+    private boolean crossBook(Order incomingOrder, Order restingOrder) {
+        return incomingOrder.getSide() == Side.BUY
+                ? incomingOrder.getPrice() >= restingOrder.getPrice()   // BUY crosses if its price >= price of best ASK
+                : incomingOrder.getPrice() <= restingOrder.getPrice();  // SELL crosses if its price <= price of best BID
     }
 
     private void trade(Order incomingOrder, Order restingOrder) {
@@ -103,7 +146,7 @@ public class OrderBookService {
         incomingOrder.subtractVolume(volumeTraded);
         restingOrder.subtractVolume(volumeTraded);
 
-        log.info("TRADE executed: {} @ {} | maker={} | taker={} | makerId={} | takerId={}", volumeTraded, restingOrder.getPrice(), incomingOrder.getSide(), restingOrder.getSide(), incomingOrder.getId(), restingOrder.getId());
+        log.info("TRADE executed: {} @ {} | maker={} | taker={} | makerId={} | takerId={}", volumeTraded, restingOrder.getPrice(), restingOrder.getSide(), incomingOrder.getSide(), restingOrder.getId(), incomingOrder.getId());
         updateTradeFeed(volumeTraded, incomingOrder, restingOrder); // broadcast executed trade to live trade feed
     }
 
@@ -113,11 +156,11 @@ public class OrderBookService {
     }
 
     private void updateBBO() {
-        Order bestBid = orderBook.getBestBid();
-        Order bestAsk = orderBook.getBestAsk();
+        Optional<Order> bestBid = orderBook.getBestBid();
+        Optional<Order> bestAsk = orderBook.getBestAsk();
 
-        int bestBidPrice = bestBid != null ? bestBid.getPrice() : 0;
-        int bestAskPrice = bestAsk != null ? bestAsk.getPrice() : 0;
+        int bestBidPrice = bestBid.isPresent() ? bestBid.get().getPrice() : 0;
+        int bestAskPrice = bestAsk.isPresent() ? bestAsk.get().getPrice() : 0;
 
         BestBidOfferDTO bbo = new BestBidOfferDTO(bestBidPrice, bestAskPrice);
         messagingTemplate.convertAndSend("/topic/bbo", bbo);
@@ -126,28 +169,22 @@ public class OrderBookService {
     private void updateMBP() {
         List<PriceLevelDTO> bidPriceLevels = new ArrayList<>();
         for (Map.Entry<Integer, Queue<Order>> entry : orderBook.getBids().entrySet()) {
-            int orderCount = entry.getValue().size();
-            int price = entry.getKey();
-            int totalVolume = 0;
 
+            int totalVolume = 0;
             for (Order order : entry.getValue()) {
                 totalVolume += order.getVolumeRemaining();
             }
-
-            bidPriceLevels.add(new PriceLevelDTO(orderCount, totalVolume, price));
+            bidPriceLevels.add(new PriceLevelDTO(entry.getValue().size(), totalVolume, entry.getKey()));
         }
 
         List<PriceLevelDTO> askPriceLevels = new ArrayList<>();
         for (Map.Entry<Integer, Queue<Order>> entry : orderBook.getAsks().entrySet()) {
-            int orderCount = entry.getValue().size();
-            int price = entry.getKey();
-            int totalVolume = 0;
 
+            int totalVolume = 0;
             for (Order order : entry.getValue()) {
                 totalVolume += order.getVolumeRemaining();
             }
-
-            askPriceLevels.add(new PriceLevelDTO(orderCount, totalVolume, price));
+            askPriceLevels.add(new PriceLevelDTO(entry.getValue().size(), totalVolume, entry.getKey()));
         }
 
         MarketByPriceDTO mbp = new MarketByPriceDTO(bidPriceLevels, askPriceLevels);
@@ -155,18 +192,29 @@ public class OrderBookService {
     }
 
     private void updateMBO() {
-        List<Order> bids = new ArrayList<>();
-        List<Order> asks = new ArrayList<>();
-
+        List<MarketByOrderEntryDTO> bids = new ArrayList<>();
         for (Map.Entry<Integer, Queue<Order>> entry : orderBook.getBids().entrySet()) {
             for (Order order : entry.getValue()) {
-                bids.add(order);
+                MarketByOrderEntryDTO mboEntry = new MarketByOrderEntryDTO(
+                        order.getTimestamp().format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS")),
+                        order.getVolumeRemaining(),
+                        order.getPrice(),
+                        order.getSide()
+                );
+                bids.add(mboEntry);
             }
         }
 
+        List<MarketByOrderEntryDTO> asks = new ArrayList<>();
         for (Map.Entry<Integer, Queue<Order>> entry : orderBook.getAsks().entrySet()) {
             for (Order order : entry.getValue()) {
-                asks.add(order);
+                MarketByOrderEntryDTO mboEntry = new MarketByOrderEntryDTO(
+                        order.getTimestamp().format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS")),
+                        order.getVolumeRemaining(),
+                        order.getPrice(),
+                        order.getSide()
+                );
+                asks.add(mboEntry);
             }
         }
 

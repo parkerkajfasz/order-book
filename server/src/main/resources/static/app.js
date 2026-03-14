@@ -10,13 +10,16 @@ stompClient.onConnect = (frame) => {
 
     stompClient.subscribe("/topic/trades", (message) => {
         const trade = JSON.parse(message.body);
-        showTrade(
-            `[${trade.timestamp}] AAPL @ ${trade.priceTraded} x ${trade.volumeTraded} | Maker: ${trade.makerSide.charAt(0)}`
-        );
+
+        const priceFormatted = String(trade.priceTraded).padStart(2, ' ');
+        showTrade(`[${trade.timestamp}] SMBL @ ${priceFormatted} x ${trade.volumeTraded} ${trade.makerSide.charAt(0)}`);
     });
 
     stompClient.subscribe("/topic/bbo", (message) => {
         const bbo = JSON.parse(message.body);
+
+        if (bbo.bestBidPrice === 0) bbo.bestBidPrice = "--";
+        if (bbo.bestAskPrice === 0) bbo.bestAskPrice = "--";
         if (currentViewDepth === "bbo") showBBO(bbo);
     });
 
@@ -84,14 +87,14 @@ function disconnect() {
 }
 
 function showTrade(trade) {
-    $("#trades").prepend("<tr><td>" + trade + "</td></tr>");
+    $("#trades").prepend("<tr style='font-family: monospace; white-space: pre;'><td>" + trade + "</td></tr>");
 }
 
 function showBBO(bbo) {
     $("#bbo").html(`
         <tr>
-            <td style="font-weight: bold;">${bbo.bestBidPrice}</td>
-            <td style="font-weight: bold;">${bbo.bestAskPrice}</td>
+            <td><b>${bbo.bestBidPrice}</b></td>
+            <td><b>${bbo.bestAskPrice}</b></td>
         </tr>
     `);
 }
@@ -128,7 +131,7 @@ function showMBO(mbo) {
     for (const bid of mbo.bids) {
         bidRows += `
             <tr>
-                <td>${bid.timestamp}</td>
+                <td>[${bid.timestamp}]</td>
                 <td>${bid.volume}</td>
                 <td>${bid.price}</td>
                 <td>${bid.side}</td>
@@ -143,7 +146,7 @@ function showMBO(mbo) {
                 <td>${ask.side}</td>
                 <td>${ask.price}</td>
                 <td>${ask.volume}</td>
-                <td>${ask.timestamp}</td>
+                <td>[${ask.timestamp}]</td>
             </tr>
         `;
     }
