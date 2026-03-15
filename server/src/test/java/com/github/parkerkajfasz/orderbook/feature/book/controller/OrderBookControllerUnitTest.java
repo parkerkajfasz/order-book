@@ -7,14 +7,16 @@ import com.github.parkerkajfasz.orderbook.feature.order.domain.TimeInForce;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderRequestDTO;
 import com.github.parkerkajfasz.orderbook.feature.order.dto.OrderResponseDTO;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.sql.Time;
 import java.time.LocalTime;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,36 +26,98 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest
 class OrderBookControllerUnitTest {
+    @Autowired
+    private MockMvc mockMvc;
 
     @MockitoBean
     private OrderBookService orderBookService;
 
-    @Autowired
-    private MockMvc mockMvc;
-
     @Test
-    void submitOrder_ValidOrderRequestAndReturnsResponse() throws Exception {
+    void submitOrder_LimitAndGTC() throws Exception {
+        OrderResponseDTO response = new OrderResponseDTO(1L, OrderType.LIMIT, TimeInForce.GOOD_TILL_CANCEL, Side.SELL, 55, 289, LocalTime.now());
+        Mockito.when(orderBookService.processOrder(any(OrderRequestDTO.class))).thenReturn(response);
 
-        when(orderBookService.addToOrderBook(any(OrderRequestDTO.class))).thenReturn(new OrderResponseDTO(1L, OrderType.LIMIT, TimeInForce.GOOD_TILL_CANCEL, Side.BUY, 55, 289, LocalTime.parse("2026-02-22T15:30:00Z")));
-
-        String validRequest = "{\"orderType\":\"LIMIT\",\"timeInForce\":\"GOOD_TILL_CANCEL\",\"side\":\"SELL\",\"price\":55,\"volume\":289,\"timestamp\":\"15:30:00\"}";
-        mockMvc.perform(post("/orderbook/orders")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(validRequest))
+        String request = """
+        {
+          "orderType":"LIMIT",
+          "timeInForce":"GOOD_TILL_CANCEL",
+          "side":"SELL",
+          "price":55,
+          "volume":289
+        }
+        """;
+        mockMvc.perform(post("/api/v1/orderbook/orders")
+                       .contentType(MediaType.APPLICATION_JSON)
+                       .content(request))
                .andExpect(status().isOk());
 
-        verify(orderBookService, times(1)).addToOrderBook(any(OrderRequestDTO.class));
+        Mockito.verify(orderBookService, Mockito.times(1))
+               .processOrder(any(OrderRequestDTO.class));
     }
 
     @Test
-    void submitOrder_InvalidOrderRequestAndReturnsException() throws Exception {
+    void submitOrder_LimitAndIOC() throws Exception {
+        OrderResponseDTO response = new OrderResponseDTO(1L, OrderType.LIMIT, TimeInForce.IMMEDIATE_OR_CANCEL, Side.SELL, 55, 289, LocalTime.now());
+        Mockito.when(orderBookService.processOrder(any(OrderRequestDTO.class))).thenReturn(response);
 
-        String invalidRequest = "{\"orderType\":\"GOOD_TILL_CANCEL\",\"timeInForce\":\"LIMIT\",\"side\":\"BUY\",\"price\":55,\"volume\":289,\"timestamp\":\"15:30:00\"}"; // OrderType and TimeInForce values are flipped, making it invalid
-        mockMvc.perform(post("/orderbook/orders")
+        String request = """
+        {
+          "orderType":"LIMIT",
+          "timeInForce":"IMMEDIATE_OR_CANCEL",
+          "side":"SELL",
+          "price":55,
+          "volume":289
+        }
+        """;
+        mockMvc.perform(post("/api/v1/orderbook/orders")
                        .contentType(MediaType.APPLICATION_JSON)
-                       .content(invalidRequest))
-               .andExpect(result -> assertTrue(result.getResolvedException() instanceof HttpMessageNotReadableException));
+                       .content(request))
+               .andExpect(status().isOk());
 
-        verify(orderBookService, times(0)).addToOrderBook(any(OrderRequestDTO.class));
+        Mockito.verify(orderBookService, Mockito.times(1))
+               .processOrder(any(OrderRequestDTO.class));
+    }
+
+    @Test
+    void submitOrder_MarketAndGTC() throws Exception {
+        String request = """
+        {
+          "orderType":"MARKET",
+          "timeInForce":"GOOD_TILL_CANCEL",
+          "side":"SELL",
+          "price":55,
+          "volume":289
+        }
+        """;
+        mockMvc.perform(post("/api/v1/orderbook/orders")
+                       .contentType(MediaType.APPLICATION_JSON)
+                       .content(request))
+               .andExpect(status().isBadRequest());
+
+        Mockito.verify(orderBookService, Mockito.never())
+               .processOrder(any(OrderRequestDTO.class));
+    }
+
+    @Test
+    void submitOrder_MarketAndIOC() throws Exception {
+        OrderResponseDTO response = new OrderResponseDTO(1L, OrderType.LIMIT, TimeInForce.IMMEDIATE_OR_CANCEL, Side.SELL, 55, 289, LocalTime.now());
+        Mockito.when(orderBookService.processOrder(any(OrderRequestDTO.class))).thenReturn(response);
+
+        String request = """
+        {
+          "orderType":"MARKET",
+          "timeInForce":"IMMEDIATE_OR_CANCEL",
+          "side":"SELL",
+          "price":55,
+          "volume":289
+        }
+        """;
+        mockMvc.perform(post("/api/v1/orderbook/orders")
+                       .contentType(MediaType.APPLICATION_JSON)
+                       .content(request))
+               .andExpect(status().isOk());
+
+        Mockito.verify(orderBookService, Mockito.times(1))
+               .processOrder(any(OrderRequestDTO.class));
     }
 }

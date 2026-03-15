@@ -20,19 +20,19 @@ public class OrderBookController {
 
     @PostMapping("/orders")
     public OrderResponseDTO submitOrder(@Valid @RequestBody OrderRequestDTO orderRequest) {
-        OrderResponseDTO createdOrder = orderBookService.addToOrderBook(orderRequest); // should be renamed to something more fitting
-        return createdOrder;
+        OrderResponseDTO submittedOrder = orderBookService.processOrder(orderRequest); // should be renamed to something more fitting
+        return submittedOrder;
     }
 
     @PostMapping("/orders/batch")
     public List<OrderResponseDTO> submitOrders(@Valid @RequestBody List<OrderRequestDTO> orderRequests) throws InterruptedException {
-        List<OrderResponseDTO> createdOrders = new ArrayList<>();
+        List<OrderResponseDTO> submittedOrders = new ArrayList<>();
 
         for (OrderRequestDTO orderRequest : orderRequests) {
-            OrderResponseDTO createdOrder = orderBookService.addToOrderBook(orderRequest);
+            OrderResponseDTO createdOrder = orderBookService.processOrder(orderRequest);
             Thread.sleep(200);
-            createdOrders.add(createdOrder);
+            submittedOrders.add(createdOrder);
         }
-        return createdOrders;
+        return submittedOrders;
     }
 }

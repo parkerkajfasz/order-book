@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class OrderBookService {
-
     private final OrderBook orderBook;
+
     private final SimpMessagingTemplate messagingTemplate;
     private static final AtomicLong ID_GENERATOR = new AtomicLong(1);
     private static final Logger log = LoggerFactory.getLogger(OrderBookService.class);
@@ -31,7 +31,7 @@ public class OrderBookService {
         this.messagingTemplate = messagingTemplate;
     }
 
-    public OrderResponseDTO addToOrderBook(OrderRequestDTO orderRequest) {
+    public OrderResponseDTO processOrder(OrderRequestDTO orderRequest) {
         Order order = new Order(
                 ID_GENERATOR.getAndIncrement(),
                 orderRequest.orderType(),
@@ -42,14 +42,14 @@ public class OrderBookService {
                 LocalTime.now()
         );
 
-        processOrder(order);
+        matchOrder(order);
         return new OrderResponseDTO(order.getId(), order.getOrderType(), order.getTimeInForce(), order.getSide(), order.getPrice(), order.getVolume(), order.getTimestamp());
     }
 
     /**
      * Matching Engine related code
      */
-    public void processOrder(Order incomingOrder) {
+    private void matchOrder(Order incomingOrder) {
 
         if (incomingOrder.getOrderType() == OrderType.MARKET) {
             processMarketOrder(incomingOrder);
@@ -105,13 +105,6 @@ public class OrderBookService {
             }
         }
 
-        /**
-         * GTC + incomingOrder quantityRemaining == 0 : Do nothing
-         * GTC + incomingOrder quantityRemaining >  0 : Add incomingOrder to order book
-         * IOC + incomingOrder quantityRemaining == 0 : Do nothing
-         * IOC + incomingOrder quantityRemaining >  0 : Do not add incomingOrder to order book
-         */
-
         if (incomingOrder.getVolumeRemaining() > 0) {
             if (incomingOrder.getTimeInForce() == TimeInForce.GOOD_TILL_CANCEL) {
                 orderBook.addOrder(incomingOrder);
@@ -122,10 +115,6 @@ public class OrderBookService {
                 }
             }
         }
-//        if (incomingOrder.getVolumeRemaining() > 0) { // if incomingOrder volume has volume remaining, but can't cross book, then add to book.
-//            orderBook.addOrder(incomingOrder);
-//            log.info("ORDER {} added to order book", incomingOrder.getId());
-//        }
     }
 
     private Optional<Order> getRestingOrder(Order incomingOrder) {
